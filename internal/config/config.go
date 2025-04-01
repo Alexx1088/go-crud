@@ -3,11 +3,8 @@ package config
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"os"
-
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"log"
 )
 
 func InitDB(connStr string) *sql.DB {
@@ -28,26 +25,4 @@ func InitDB(connStr string) *sql.DB {
 
 	fmt.Println("Database connection successfully established")
 	return db
-}
-
-func LoadConfig() (string, error) {
-	// Load .env file
-	err := godotenv.Load()
-	if err != nil {
-		return "", fmt.Errorf("error loading .env file: %w", err)
-	}
-
-	// Get environment variables
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-
-	// Construct connection string
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		dbUser, dbPassword, dbHost, dbPort, dbName)
-
-	log.Println("Configuration loaded successfully")
-	return connStr, nil
 }
