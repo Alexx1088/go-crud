@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"go-crud/internal/models"
 	"go-crud/internal/repositories"
@@ -30,14 +30,35 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	fmt.Println(user)
-	_, err := h.Service.CreateUser(user)
+
+	// Validate the User struct
+	if err := models.Validate.Struct(user); err != nil {
+		// Extract validation errors
+		errors := err.(validator.ValidationErrors)
+		errorMessage := "Validation failed:"
+		for _, e := range errors {
+			errorMessage += " " + e.Field() + " is invalid"
+		}
+		http.Error(w, errorMessage, http.StatusBadRequest)
+		return
+	}
+
+	// Hash the password before saving the user
+	hashedPassword, err := utils.HashPassword(user.PasswordHash)
 	if err != nil {
+		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		return
+	}
+	user.PasswordHash = hashedPassword
+
+	// Save the user to the database
+	if _, err := h.Service.CreateUser(user); err != nil {
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully"})
 }
 
 // Login handles user login and generates a JWT token.
