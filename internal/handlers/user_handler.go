@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	_ "fmt"
 	"go-crud/internal/repositories"
+	"go-crud/middleware"
 	"net/http"
 	"strconv"
 
@@ -21,16 +22,20 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 	return &UserHandler{Service: service}
 }
 
-func RegisterUserRoutes(router *mux.Router, db *sql.DB) {
+func RegisterUserRoutes(router *mux.Router, db *sql.DB, secretKey []byte) {
 	repo := repositories.NewUserRepository(db)
 	service := services.NewUserService(repo)
 	handler := NewUserHandler(service)
 
-	router.HandleFunc("/users", handler.GetUsers).Methods("GET")
-	router.HandleFunc("/users/{id}", handler.GetUser).Methods("GET")
-	router.HandleFunc("/users", handler.CreateUser).Methods("POST")
-	router.HandleFunc("/users/{id}", handler.UpdateUser).Methods("PUT")
-	router.HandleFunc("/users/{id}", handler.DeleteUser).Methods("DELETE")
+	// Apply AuthMiddleware to all /users routes
+	protectedRouter := router.PathPrefix("/users").Subrouter()
+	protectedRouter.Use(middleware.AuthMiddleware(secretKey)) // Protect all /users routes
+
+	protectedRouter.HandleFunc("", handler.GetUsers).Methods("GET")
+	protectedRouter.HandleFunc("/{id}", handler.GetUser).Methods("GET")
+	protectedRouter.HandleFunc("", handler.CreateUser).Methods("POST")
+	protectedRouter.HandleFunc("/{id}", handler.UpdateUser).Methods("PUT")
+	protectedRouter.HandleFunc("/{id}", handler.DeleteUser).Methods("DELETE")
 }
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {

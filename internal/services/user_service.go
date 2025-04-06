@@ -38,3 +38,7 @@ func (s *UserService) UpdateUser(id int, user models.User) error {
 func (s *UserService) DeleteUser(id int) error {
 	return s.Repo.DeleteUser(id)
 }
+
+func (s *UserService) GetUserByEmail(email string) (models.User, error) {
+	return s.Repo.GetUserByEmail(email)
+}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go-crud/internal/models"
+	"go-crud/internal/utils"
 )
 
 type UserRepository struct {
@@ -45,8 +46,13 @@ func (r *UserRepository) GetUserByID(id int) (models.User, error) {
 }
 
 func (r *UserRepository) CreateUser(user models.User) (int, error) {
+	hashedPassword, err := utils.HashPassword(user.PasswordHash)
+	if err != nil {
+		return 0, err
+	}
+
 	var id int
-	err := r.DB.QueryRow("INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id", user.Name, user.Email).Scan(&id)
+	err = r.DB.QueryRow("INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id", user.Name, user.Email, hashedPassword).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -61,4 +67,17 @@ func (r *UserRepository) UpdateUser(id int, user models.User) error {
 func (r *UserRepository) DeleteUser(id int) error {
 	_, err := r.DB.Exec("DELETE FROM users WHERE id = $1", id)
 	return err
+}
+
+func (r *UserRepository) GetUserByEmail(email string) (models.User, error) {
+	var user models.User
+	err := r.DB.QueryRow("SELECT id, name, email, password_hash FROM users WHERE email = $1", email).
+		Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.User{}, errors.New("user not found")
+		}
+		return models.User{}, err
+	}
+	return user, nil
 }

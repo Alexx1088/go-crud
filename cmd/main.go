@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-crud/internal/config"
 	"go-crud/internal/handlers"
+	"go-crud/internal/utils"
 	"log"
 	"net/http"
 	"os"
@@ -26,6 +27,13 @@ func main() {
 	dbPort := os.Getenv("DB_PORT")
 	dbName := os.Getenv("DB_NAME")
 
+	//Load JWT secret key
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable not set")
+	}
+	utils.SetJWTSecret(jwtSecret)
+
 	// Construct connection string
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		dbUser, dbPassword, dbHost, dbPort, dbName)
@@ -39,7 +47,9 @@ func main() {
 	router := mux.NewRouter()
 
 	// Register routes
-	handlers.RegisterUserRoutes(router, db)
+	handlers.RegisterUserRoutes(router, db, []byte(jwtSecret))
+
+	handlers.RegisterAuthRoutes(router, db)
 
 	// Start the server
 	log.Println("Server is running on port 8080")
