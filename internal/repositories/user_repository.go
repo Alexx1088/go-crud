@@ -60,8 +60,16 @@ func (r *UserRepository) CreateUser(user models.User) (int, error) {
 }
 
 func (r *UserRepository) UpdateUser(id int, user models.User) error {
-	_, err := r.DB.Exec("UPDATE users SET name = $1, email = $2 WHERE id = $3", user.Name, user.Email, id)
-	return err
+	query := `
+        UPDATE users
+        SET name = $1, email = $2, password_hash = $3
+        WHERE id = $4
+    `
+	_, err := r.DB.Exec(query, user.Name, user.Email, user.PasswordHash, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *UserRepository) DeleteUser(id int) error {

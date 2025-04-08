@@ -4,6 +4,7 @@ import (
 	_ "errors"
 	"go-crud/internal/models"
 	"go-crud/internal/repositories"
+	"go-crud/internal/utils"
 )
 
 type UserService struct {
@@ -31,7 +32,26 @@ func (s *UserService) CreateUser(user models.User) (models.User, error) {
 	return user, nil
 }
 
-func (s *UserService) UpdateUser(id int, user models.User) error {
+func (s *UserService) UpdateUser(id int, req models.UpdateUserRequest) error {
+	user, err := s.Repo.GetUserByID(id)
+	if err != nil {
+		return err
+	}
+
+	if req.Name != nil {
+		user.Name = *req.Name
+	}
+	if req.Email != nil {
+		user.Email = *req.Email
+	}
+	if req.PasswordHash != nil {
+		hashedPassword, err := utils.HashPassword(*req.PasswordHash)
+		if err != nil {
+			return err
+		}
+		user.PasswordHash = hashedPassword
+	}
+
 	return s.Repo.UpdateUser(id, user)
 }
 
