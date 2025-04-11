@@ -1,6 +1,9 @@
 # Use the official Go image as a base
 FROM golang:1.24
 
+# Install PostgreSQL client (psql) and other dependencies
+RUN apt-get update && apt-get install -y postgresql-client
+
 # Set the working directory inside the container
 WORKDIR /app
 
@@ -19,8 +22,4 @@ EXPOSE 8080
 # Command to compile and run the application
 CMD ["sh", "-c", "go build -o main ./cmd/main.go && ./main"]
 
-# Install Air
-RUN go install github.com/air-verse/air@latest
-
-# Use Air as the entrypoint
-CMD ["air"]
+ENTRYPOINT ["/app/scripts/deploy.sh"]

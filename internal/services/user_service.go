@@ -7,6 +7,9 @@ import (
 	"go-crud/internal/utils"
 )
 
+type NewMockUserServiceInterface interface {
+}
+
 type UserService struct {
 	Repo repositories.UserRepositoryInterface
 }

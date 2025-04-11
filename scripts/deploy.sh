@@ -15,3 +15,5 @@ for migration in /app/migrations/*.sql; do
 done
 
 echo "Migrations applied successfully."
+
+exec /app/main
